@@ -42,6 +42,7 @@ public with sharing class CTPersonController {
         {
             return people[0];
         }
+
         return null;
     }
 
@@ -55,4 +56,150 @@ public with sharing class CTPersonController {
 
         return mapOfPeopleStatusCount;
     }
+
+    public static Set<Id> getCohabitants(Set<Id> personIds,Set<Id> alreadyProcessed)
+    {
+        List<String> healthStatus = new List<String>{'Green', 'Yellow'};
+        List<People_Tracing__c> tracs = [
+            SELECT Id, Person_1__c, Person_2__c 
+            FROM People_Tracing__c Where (Person_1__c In :personIds OR Person_2__c In :personIds)
+            AND Contact_Type__c = 'Cohabitant'
+            AND (Person_1__r.Health_Status__c In : healthStatus OR Person_2__r.Health_Status__c In :healthStatus)
+            ];
+
+        
+        Set<Id> cohabitants = new Set<Id>();
+
+        for(People_Tracing__c pt : tracs)
+        {
+            if(!alreadyProcessed.contains(pt.Person_1__c))
+            {
+                cohabitants.add(pt.Person_1__c);
+                alreadyProcessed.add(pt.Person_1__c);
+            }
+
+            if(!alreadyProcessed.contains(pt.Person_2__c))
+            {
+                cohabitants.add(pt.Person_2__c);
+                alreadyProcessed.add(pt.Person_2__c);
+            }
+        }
+
+        if(cohabitants.size() >0)
+        {
+            return cohabitants;
+        }
+
+        return null;
+
+    }
+
+    public static Set<Id> getNeighbours(Set<Id> personIds,Set<Id> alreadyProcessed)
+    {
+        List<People_Tracing__c> tracs = [
+            SELECT Id, Person_1__c, Person_2__c 
+            FROM People_Tracing__c Where (Person_1__c In :personIds OR Person_2__c In :personIds)
+            AND Contact_Type__c = 'Neighbour'
+            AND (Person_1__r.Health_Status__c = 'Green' OR Person_2__r.Health_Status__c = 'Green')
+            ];
+
+        
+        Set<Id> neighbours = new Set<Id>();
+
+        for(People_Tracing__c pt : tracs)
+        {
+            if(!alreadyProcessed.contains(pt.Person_1__c))
+            {
+                neighbours.add(pt.Person_1__c);
+                alreadyProcessed.add(pt.Person_1__c);
+            }
+
+            if(!alreadyProcessed.contains(pt.Person_2__c))
+            {
+                neighbours.add(pt.Person_2__c);
+                alreadyProcessed.add(pt.Person_2__c);
+            }
+        }
+
+        if(neighbours.size() >0)
+        {
+            return neighbours;
+        }
+
+        return null;
+    }
+
+    public static Set<Id> getPrimaryContact(Set<Id> personIds,Set<Id> alreadyProcessed)
+    {
+        List<String> healthStatus = new List<String>{'Green', 'Yellow'};
+        List<People_Tracing__c> tracs = [
+            SELECT Id, Person_1__c, Person_2__c 
+            FROM People_Tracing__c Where (Person_1__c In :personIds OR Person_2__c In :personIds)
+            AND Contact_Type__c = 'Other'
+            AND Contact_Date__c = LAST_N_DAYS:10
+            AND (Person_1__r.Health_Status__c In : healthStatus OR Person_2__r.Health_Status__c In :healthStatus)
+            ];
+
+        
+        Set<Id> primaryContacts = new Set<Id>();
+
+        for(People_Tracing__c pt : tracs)
+        {
+            if(!alreadyProcessed.contains(pt.Person_1__c))
+            {
+                primaryContacts.add(pt.Person_1__c);
+                alreadyProcessed.add(pt.Person_1__c);
+            }
+
+            if(!alreadyProcessed.contains(pt.Person_2__c))
+            {
+                primaryContacts.add(pt.Person_2__c);
+                alreadyProcessed.add(pt.Person_2__c);
+            }
+        }
+
+        if(primaryContacts.size() >0)
+        {
+            return primaryContacts;
+        }
+
+        return null;
+    }
+
+    public static Set<Id> getSecondaryContact(Set<Id> primaryContacts,Set<Id> alreadyProcessed)
+    {
+        List<People_Tracing__c> tracs = [
+            SELECT Id, Person_1__c, Person_2__c 
+            FROM People_Tracing__c Where (Person_1__c In :primaryContacts OR Person_2__c In :primaryContacts)
+            AND Contact_Type__c = 'Other'
+            AND Contact_Date__c = LAST_N_DAYS:10
+            AND (Person_1__r.Health_Status__c = 'Green' OR Person_2__r.Health_Status__c = 'Green')
+            ];
+
+        
+        Set<Id> neighbours = new Set<Id>();
+
+        for(People_Tracing__c pt : tracs)
+        {
+            if(!alreadyProcessed.contains(pt.Person_1__c))
+            {
+                neighbours.add(pt.Person_1__c);
+                alreadyProcessed.add(pt.Person_1__c);
+            }
+
+            if(!alreadyProcessed.contains(pt.Person_2__c))
+            {
+                neighbours.add(pt.Person_2__c);
+                alreadyProcessed.add(pt.Person_2__c);
+            }
+        }
+
+        if(neighbours.size() >0)
+        {
+            return neighbours;
+        }
+
+        return null;
+    }
+
 }

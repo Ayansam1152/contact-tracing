@@ -48,4 +48,48 @@ public with sharing class CTLocationController {
 
         return mapOfLocationStatusCount;
     }
+
+    public static void updateRedScore(Set<Id> locationIds)
+    {
+        List<Location__c> locationToBeUpdated = new List<Location__c>();
+       AggregateResult[] aggregateResult = [
+            Select Location__c, Count(Id) Total FROM Location_Tracing__c
+            WHERE Person__r.Health_Status__c = 'Red'
+            AND Visit_Date__c = LAST_N_DAYS:10
+            AND Location__c In : locationIds
+            Group By Location__c
+        ];
+
+        for (AggregateResult ag : aggregateResult) {
+            String locationId = String.valueOf(ag.get('Location__c'));
+            Integer redScore = Integer.valueOf(ag.get('Total'));
+            String status = getStatus(redScore);
+            
+            locationToBeUpdated.add(new Location__c(Id = locationId,Status__c = status,Red_Score__c = redScore));
+        }
+
+        if(locationToBeUpdated.size() > 0)
+        {
+            update locationToBeUpdated;
+        }
+    }
+
+    private static String getStatus(Integer redScore)
+    {
+        if(redScore == 0)
+        {
+            return 'Green';
+        }
+        else if( redScore <= 5)
+        {
+            return 'Yellow';
+        }
+        else if( redScore <= 10)
+        {
+            return 'Orange';
+        }
+        else {
+            return 'Red';
+        }
+    }
 }

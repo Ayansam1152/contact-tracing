@@ -9,5 +9,13 @@
       "files": "*.{cmp,page,component}",
       "options": { "parser": "html" }
     }
-  ]
+  ],
+    "printWidth": 80,
+    "tabWidth": 2,
+    "useTabs": false,
+    "semi": true,
+    "singleQuote": true,
+    "bracketSpacing": true,
+    "jsxBracketSameLine": false,
+    "htmlWhitespaceSensitivity": "ignore"  
 }
